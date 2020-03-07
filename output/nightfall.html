@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <title>Walkthrough: Nightfall CTF</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
+        <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="nothing0x00 Atom Feed" />
+
+        <!--[if IE]>
+            <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="/">nothing0x00  <strong>Reflections on Hacking, Information Theory and Random Ephemera</strong></a></h1>
+                <nav><ul>
+    
+                        <li><a href="/pages/about.html">About Me</a></li>
+    
+                        <li><a href="/pages/contact.html">Contact</a></li>
+                </ul>
+                </nav>
+<div id="submenu">
+                    <ul>
+                            <li class="active"><a href="/category/ctf.html">CTF</a></li>
+                            <li><a href="/category/introduction.html">Introduction</a></li>
+                    </ul>
+                <div>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/nightfall.html" rel="bookmark"
+           title="Permalink to Walkthrough: Nightfall CTF">Walkthrough: Nightfall CTF</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <span>Mon 17 February 2020</span>
+<span>| tags: <a href="/tag/ctf.html">#CTF</a></span>
+</footer><!-- /.post-info -->      <p>Nightfall is the second machine in a series of three (Dusk, Nightfall, Sunrise) that we will be walking through here.</p>
+<p>So, without further adieu, let's begin...</p>
+<p>The initial enumeration of the system shows that a number of ports are open, including ports 21, 22, 80, 139, 445 and 3306.</p>
+<p><img alt="initial_nmap" src="/images/nightfall/initial_nmap.png"></p>
+<p>The initial foothold was difficult to identify, with no attack paths being made apparent through additional scanning, attempts to find pages using gobuster and attempting to brute force the SQL service.</p>
+<p>The first piece of useful information came from running enum4linux on the SMB and NBT services. This yielded not only information on the workgroups and domains which are related to the machine, but it also netted some usernames.</p>
+<p><img alt="workgroups" src="/images/nightfall/workgroups.png"></p>
+<p><img alt="users" src="/images/nightfall/users.png"></p>
+<p>After more enumeration it was clear that no technical forms of exploitation were going to emerge as likely, so the strategy moved into less technical forms of exploitation, specifically brute force attacks. After attempting attacks against FTP, SSH and MYSQL using the fasttrack list, I then moved to the rockyou list and got some valid credentials for the FTP service.</p>
+<p><img alt="brute_force_ftp" src="/images/nightfall/brute_ftp.png"></p>
+<p>The FTP server did not contain any usable data, but the directory was the /home/matt directory. Users with valid credentials for the matt account also have read/write access to the directory So, to gain access to the machine I first created a .ssh directory, then wrote an authorized_keys file locally and transfered it to the remote server over FTP.</p>
+<p><img alt="ftp_auth_keys" src="/images/nightfall/ftp_put_authorized_keys.png"></p>
+<p>With the authorized_keys file in place it was possible to use the SSH keys stored on the attacking machine to log into the machine as matt.</p>
+<p><img alt="ssh_login_matt" src="/images/nightfall/ssh_login_matt.png"></p>
+<p>After landing on the machine the first step, after seeing if I can get into other home folders and access files (I cannot), was to pull down LinEnum and enumerate the machine. The initial results show an interesting SUID and SGID file, owned and editable by nightfall.</p>
+<p><img alt="suid" src="/images/nightfall/suid.png"></p>
+<p>The /scripts/find file runs as nightfall. If we assume that this is the same as the find binary, then by extension the find command is capable of executing commands through the -exec flag. After a test we can confirm that the functionality of this /scripts/find binary functions similarly to the find command. Using this information it was possible to execute /bin/bash in the context of the nightfall user to achieve lateral privileges to the nightfall user.</p>
+<p><img alt="suid_exploitation" src="/images/nightfall/nightfall_suid_exploitation.png"></p>
+<p>After achieving elevated access the first step was to grab the user.txt flag.</p>
+<p><img alt="user_flag" src="/images/nightfall/user_flag.png"></p>
+<p>Then, a similar process of establishing SSh access was replicated; a .ssh directory was created in /home/nightfall, then the public ssh key for my attacking machine was echoed into an authorized_keys file.</p>
+<p><img alt="nightfall_ssh" src="/images/nightfall/nightfall_ssh.png"></p>
+<p><img alt="nightfall_ssh_access" src="/images/nightfall/nightfall_ssh_access.png"></p>
+<p>Initial enumeration shows that we can run the cat command with root privileges through sudoing without a password.</p>
+<p><img alt="nightfall_sudo_l" src="/images/nightfall/nightfall_sudo_l.png"></p>
+<p>Using this access I read out the /etc/shadow file to the screen.</p>
+<p><img alt="shadow" src="/images/nightfall/shadow.png"></p>
+<p>Then I copied the root entry to a file called shadow on the attacking machine, and the root entry in the /etc/passwd file to a passwd file on the attacking machine. Using the unshadow command from the john password cracking suite I combined these into a crackable password hash and started john. Using this process I was able to access the root password; miguel2.</p>
+<p><img alt="john_process" src="/images/nightfall/john_process.png"></p>
+<p>After extracting the password I used it to su to root, then grabbed the flag.</p>
+<p><img alt="r00ted" src="/images/nightfall/r00ted.png"></p>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+                            <li><a href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
+
+                            <li><a href="https://github.com/nothing0x00">github</a></li>
+                            <li><a href="https://twitter.com/nothing0x00">twitter</a></li>
+                        </ul>
+                </div><!-- /.social -->
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <p>Powered by <a href="http://getpelican.com/">Pelican</a>. Theme <a href="https://github.com/blueicefield/pelican-blueidea/">blueidea</a>, inspired by the default theme.</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

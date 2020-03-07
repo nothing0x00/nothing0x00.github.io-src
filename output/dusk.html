@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <title>Walkthrough: Dusk CTF</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
+        <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="nothing0x00 Atom Feed" />
+
+        <!--[if IE]>
+            <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="/">nothing0x00  <strong>Reflections on Hacking, Information Theory and Random Ephemera</strong></a></h1>
+                <nav><ul>
+    
+                        <li><a href="/pages/about.html">About Me</a></li>
+    
+                        <li><a href="/pages/contact.html">Contact</a></li>
+                </ul>
+                </nav>
+<div id="submenu">
+                    <ul>
+                            <li class="active"><a href="/category/ctf.html">CTF</a></li>
+                            <li><a href="/category/introduction.html">Introduction</a></li>
+                    </ul>
+                <div>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/dusk.html" rel="bookmark"
+           title="Permalink to Walkthrough: Dusk CTF">Walkthrough: Dusk CTF</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <span>Mon 10 February 2020</span>
+<span>| tags: <a href="/tag/ctf.html">#CTF</a></span>
+</footer><!-- /.post-info -->      <p>This is the first in a series of CTF walkthroughs. The goal of this series is to demonstrate the pathway from boot to root, and to do so with an eye toward clarity and an incremental stepping through of the process used to solve the machine.  More of these walkthroughs will be posted as they become relevant, and as I have the time to complete machines.</p>
+<p><strong>Note: At no point will there be information related to current, non-retired, machines on HackTheBox, or any walkthroughs of the OSCP labs, nor will I respond to inquiries about how to complete these machines</strong></p>
+<p>So, with that, let's begin...</p>
+<p>When the machine boots it is allocated an IP of 192.68.56.108 (running on a Host-Only network in VirtualBox).</p>
+<p>Initial nmap scanning shows that ports 21, 22, 25, 80, 3306 and 8080 are open.</p>
+<p><img alt="nmap_image" src="/images/dusk/nmap.png"></p>
+<p>More detailed scanning did not show any obvious pathways of attack, with most services reporting back as expected. After a significant amount of enumeration the best pathway forward seemed to be to brute force a way into the machine.</p>
+<p>Attempts were made to brute force the FTP service, with no luck. Eventually I succeeded in grabbing valid credentials for the MariaDb service on port 3306, using the mysql-brute NSE script within nmap.</p>
+<p><img alt="mysql_brute_force" src="/images/dusk/mysql_brute.png"></p>
+<p>Using these credentials it was possible to log into the database remotely.</p>
+<p><img alt="mysql_login" src="/images/dusk/mysql_login.png"></p>
+<p>The database itself did not return any useful information, but because the service on port 8080 is running PHP, and because it is possible to write to the filesystem as root in SQL databases, it is theoretically possible to write a webshell to the system and access it over port 8080.</p>
+<p>The service on port 8080 is utilizing /var/tmp as a webroot, as indicated by the information displayed by the service.</p>
+<p><img alt="webroot" src="/images/dusk/8080_working_dir.png"></p>
+<p>Using the information gathered about the service it was possible to utilize the database access to write a PHP webshell to the webserver using the following command:</p>
+<p><img alt="webshell_write" src="/images/dusk/shell_write.png"></p>
+<p>The shell was then accessed at http://192.168.56.108:8080/shell2.php with commands run through the cmd parameter.</p>
+<p><img alt="webshell" src="/images/dusk/webshell.png"></p>
+<p>Using netcat a command was constructed which generated a reverse shell from the target to the attacking machine.</p>
+<p><img alt="webshell_reverse" src="/images/dusk/webshell_reverse.png"></p>
+<hr>
+<p><img alt="webshell_handler" src="/images/dusk/webshell_reverse_handler.png"></p>
+<p>After initial access was gained it was possible to grab the user flag.</p>
+<p><img alt="user_flag" src="/images/dusk/user.png"></p>
+<p>Next, I moved to /tmp, pulled down LinEnum and started enumeration.</p>
+<p>The initial run showed that the www-data user was able to run ping, make and sl with sudo privileges without providing a password.</p>
+<p><img alt="sudo_privs" src="/images/dusk/sudo_privs.png"></p>
+<p>Additionally, the process tree dump contained the credentials used for the FTP server, which for pyftplib are contained in the launch command.</p>
+<p><img alt="ftp_creds" src="/images/dusk/pyftp_creds.png"></p>
+<p>Using these credentials I was able to log into the FTP service, which granted me read access to the /root directory, where I was able to grab the flag.</p>
+<p><img alt="root_ftp" src="/images/dusk/root_ftp.png"></p>
+<hr>
+<p><img alt="r00ted" src="/images/dusk/root_flag.png"></p>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+                            <li><a href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
+
+                            <li><a href="https://github.com/nothing0x00">github</a></li>
+                            <li><a href="https://twitter.com/nothing0x00">twitter</a></li>
+                        </ul>
+                </div><!-- /.social -->
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <p>Powered by <a href="http://getpelican.com/">Pelican</a>. Theme <a href="https://github.com/blueicefield/pelican-blueidea/">blueidea</a>, inspired by the default theme.</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

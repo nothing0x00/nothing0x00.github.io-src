@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 AUTHOR = 'nothing0x00'
 SITENAME = 'nothing0x00'
-SITEURL = 'http://localhost:8000'
+SITEURL = 'https://nothing0x00.github.io'
 SITETITLE = 'nothing0x00'
 SITESUBTITLE = 'Reflections on Hacking, Information Theory and Random Ephemera'
 PATH = 'content'
@@ -14,7 +14,7 @@ DEFAULT_LANG = 'en'
 DISPLAY_CATEGORIES_ON_MENU = False
 DISPLAY_CATEGORIES_ON_SUBMENU = True
 
-THEME = '/home/x/DevelopmentProjects/git_repos/nothing0x00.github.io/themes/pelican-blueidea'
+THEME = '/home/x/DevelopmentProjects/git_repos/ghpages/themes/pelican-blueidea'
 #NEST_HEADER_LOGO = 'static/digwar.png'
 # Feed generation is usually not desired when developing
 #FEED_ALL_ATOM = None
